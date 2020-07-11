@@ -1,0 +1,60 @@
+version: "3"
+services:
+  nginx:
+    image: nginx:1.13
+    restart: always
+    ports:
+      - 80:80
+    volumes:
+      - "./etc/nginx:/etc/nginx/conf.d"
+      - "./htdocs:/var/www/html"
+    networks:
+      - default
+  php:
+    environment:
+      - "PS1=$$(pwd) $$(whoami) $$ "
+      - "SSH_AUTH_SOCK=/tmp/ssh-agent"
+    build: 
+      context: ./php-fpm
+      args:
+        uid: ${UID}
+        gid: ${GID}
+    ports:
+      - 9000:9000
+    volumes:
+      - "./htdocs:/var/www/html"
+      - "$SSH_AUTH_SOCK:/tmp/ssh-agent"
+      - "./var/log:/var/log"
+      - "./var/data:/var/data"
+    networks:
+      - default
+    depends_on:
+      - mysql
+  mysql:
+    image: mysql:5.7
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    ports:
+      - 3307:3306
+    expose:
+      - 3307
+    volumes:
+      - "./var/lib/mysql:/var/lib/mysql"
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: phpyadminmultifacturalooo
+    restart: always
+    environment:
+      MYSQL_USER:  ${MYSQL_USER}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      PMA_HOST: ${PMA_HOST}
+    ports:
+      - 8080:80
+    volumes:
+      - /sessions
+    depends_on:
+      - mysql 
+  
